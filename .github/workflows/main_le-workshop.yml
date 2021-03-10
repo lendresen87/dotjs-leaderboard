@@ -1,0 +1,35 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy container app to Azure Web App - le-workshop
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: 'ubuntu-latest'
+
+    steps:
+    - uses: actions/checkout@master
+
+    - uses: azure/docker-login@v1
+      with:
+        login-server: https://leworkshop.azurecr.io/
+        username: ${{ secrets.AzureAppService_ContainerUsername_f3c4f2f6a740442fae3a434c3292b505 }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_83527b00a9b346a8965ba7bc11009c8a }}
+
+    - run: |
+        docker build . -t leworkshop.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_f3c4f2f6a740442fae3a434c3292b505 }}/test/dotjs-leaderboard:${{ github.sha }}
+        docker push leworkshop.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_f3c4f2f6a740442fae3a434c3292b505 }}/test/dotjs-leaderboard:${{ github.sha }}
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'le-workshop'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_8dd0308caeac4ce6b49c0e3137f62230 }}
+        images: 'leworkshop.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_f3c4f2f6a740442fae3a434c3292b505 }}/test/dotjs-leaderboard:${{ github.sha }}'
